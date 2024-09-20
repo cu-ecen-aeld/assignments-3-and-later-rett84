@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
         printf("One of parameters is empty.\n");
         syslog(LOG_ERR,"Error One of parameters is empty.\n");
         return 1;
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 
 
@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
         printf("Unable to create file.\n");
         syslog(LOG_ERR,"Error One of parameters is empty.\n");
         return 1;
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 
 
