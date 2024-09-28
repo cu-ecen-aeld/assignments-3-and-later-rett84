@@ -132,14 +132,14 @@ make CROSS_COMPILE=${CROSS_COMPILE}
 # on the target rootfs
 echo "Copying utilities"
 
-$FINDER_APP_DIR
+cd $FINDER_APP_DIR
 mkdir ${OUTDIR}/rootfs/home/conf
-cp -v writer ${OUTDIR}/rootfs/home
-cp -v autorun-qemu.sh ${OUTDIR}/rootfs/home
-cp -v finder.sh ${OUTDIR}/rootfs/home
-cp -v finder-test.sh ${OUTDIR}/rootfs/home
-cp -v ../conf/username.txt ${OUTDIR}/rootfs/home/conf
-cp -v ../conf/assignment.txt ${OUTDIR}/rootfs/home/conf
+cp ${FINDER_APP_DIR}/writer ${OUTDIR}/rootfs/home
+cp ${FINDER_APP_DIR}/autorun-qemu.sh ${OUTDIR}/rootfs/home
+cp ${FINDER_APP_DIR}/finder.sh ${OUTDIR}/rootfs/home
+cp ${FINDER_APP_DIR}/finder-test.sh ${OUTDIR}/rootfs/home
+cp ${FINDER_APP_DIR}/conf/username.txt ${OUTDIR}/rootfs/home/conf
+cp ${FINDER_APP_DIR}/conf/assignment.txt ${OUTDIR}/rootfs/home/conf
 
 
 # TODO: Chown the root directory
