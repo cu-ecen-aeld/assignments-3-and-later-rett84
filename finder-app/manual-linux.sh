@@ -112,10 +112,10 @@ ${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
 # TODO: Add library dependencies to rootfs
 echo "Adding Libraries"
 cd ${OUTDIR}/rootfs
-cp -a /usr/local/arm-cross-compiler/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc/lib/ld-linux-aarch64.so.1 lib
-cp -a /usr/local/arm-cross-compiler/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc/lib64/libm.so.6 lib64
-cp -a /usr/local/arm-cross-compiler/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc/lib64/libresolv.so.2 lib64
-cp -a /usr/local/arm-cross-compiler/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc/lib64/libc.so.6 lib64
+cp -a ${FINDER_APP_DIR}/libs/ld-linux-aarch64.so.1 lib
+cp -a ${FINDER_APP_DIR}/libs/libm.so.6 lib64
+cp -a ${FINDER_APP_DIR}/libs/libresolv.so.2 lib64
+cp -a ${FINDER_APP_DIR}/libs/libc.so.6 lib64
 
 # TODO: Make device nodes
 echo "making Nodes"
@@ -124,7 +124,7 @@ sudo mknod -m 600 dev/console c 5 1
 
 # TODO: Clean and build the writer utility
 echo "Compiling Writer"
-cd $(realpath $(dirname $0))
+cd "$FINDER_APP_DIR"
 make clean
 make CROSS_COMPILE=${CROSS_COMPILE}
 
@@ -132,7 +132,7 @@ make CROSS_COMPILE=${CROSS_COMPILE}
 # on the target rootfs
 echo "Copying utilities"
 
-cd $(realpath $(dirname $0))
+$FINDER_APP_DIR
 mkdir ${OUTDIR}/rootfs/home/conf
 cp -a writer ${OUTDIR}/rootfs/home
 cp -a autorun-qemu.sh ${OUTDIR}/rootfs/home
