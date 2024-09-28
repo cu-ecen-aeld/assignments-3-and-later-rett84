@@ -134,12 +134,12 @@ echo "Copying utilities"
 
 $FINDER_APP_DIR
 mkdir ${OUTDIR}/rootfs/home/conf
-cp -a writer ${OUTDIR}/rootfs/home
-cp -a autorun-qemu.sh ${OUTDIR}/rootfs/home
-cp -a finder.sh ${OUTDIR}/rootfs/home
-cp -a finder-test.sh ${OUTDIR}/rootfs/home
-cp -a ../conf/username.txt ${OUTDIR}/rootfs/home/conf
-cp -a ../conf/assignment.txt ${OUTDIR}/rootfs/home/conf
+cp -v writer ${OUTDIR}/rootfs/home
+cp -v autorun-qemu.sh ${OUTDIR}/rootfs/home
+cp -v finder.sh ${OUTDIR}/rootfs/home
+cp -v finder-test.sh ${OUTDIR}/rootfs/home
+cp -v ../conf/username.txt ${OUTDIR}/rootfs/home/conf
+cp -v ../conf/assignment.txt ${OUTDIR}/rootfs/home/conf
 
 
 # TODO: Chown the root directory
