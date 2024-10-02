@@ -71,13 +71,14 @@ bool start_thread_obtaining_mutex(pthread_t *thread, pthread_mutex_t *mutex,int 
 
 
     int ret;
-    ret = pthread_create (thread, NULL, &threadfunc, args);
+    ret = pthread_create (thread, NULL, threadfunc, args);
     if (ret) 
     {
         return false;
     }
     else{
          return true;
+         free(args);
   
     }
 

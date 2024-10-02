@@ -21,7 +21,7 @@ struct thread_data{
      */
     bool thread_complete_success;
     pthread_mutex_t* mutex;
-    pthread_t* thread;
+   // pthread_t* thread;
 
     int wait_to_obtain;
     int wait_to_release;
