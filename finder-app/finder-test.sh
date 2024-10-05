@@ -9,6 +9,9 @@ NUMFILES=10
 WRITESTR=AELD_IS_FUN
 WRITEDIR=/tmp/aeld-data
 username=$(cat conf/username.txt)
+export PATH=$PATH:/usr/bin
+
+cd `dirname $0`
 
 if [ $# -lt 3 ]
 then
@@ -65,9 +68,9 @@ rm -rf /tmp/aeld-data
 set +e
 echo ${OUTPUTSTRING} | grep "${MATCHSTR}"
 if [ $? -eq 0 ]; then
-	echo "success"
+	echo "success" > /tmp/assignment4-result.txt
 	exit 0
 else
-	echo "failed: expected  ${MATCHSTR} in ${OUTPUTSTRING} but instead found"
+	echo "failed: expected  ${MATCHSTR} in ${OUTPUTSTRING} but instead found" > /tmp/assignment4-result.txt
 	exit 1
 fi
