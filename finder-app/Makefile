@@ -1,5 +1,5 @@
 
-$(TARGET): $(OBJS)
+all: $(OBJS)
 #all: writer.c
 	$(CC) $(CFLAGS) $(INCLUDES) $(OBJS) -o $(TARGET) $(LDFLAGS)
 #$(CROSS_COMPILE)gcc -g -Wall writer.c -o writer
