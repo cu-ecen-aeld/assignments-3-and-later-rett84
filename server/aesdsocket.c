@@ -11,6 +11,7 @@
 #include <syslog.h>
 #include<errno.h>
 #define PORT 9000
+#define MAX_SIZE 100
 
 volatile sig_atomic_t gSignalInterrupt = 0;
 
@@ -87,13 +88,14 @@ int main(int argc, char *argv[])
     ********************************
     ********************************
     */
-    int server_fd, new_socket;
-    ssize_t valread;
+    int server_fd=0;
+    int new_socket=0;
+    ssize_t valread =0;
     struct sockaddr_in address;
     int opt = 1;
     socklen_t addrlen = sizeof(address);
     char *full_packet = malloc(sizeof(char));
-    char buffer[100] = { 0 };
+    char buffer[MAX_SIZE+1]=  {0};
     char new_line_char[] = "\n"; //new line variable
     char store_file[] =  "/var/tmp/aesdsocketdata";
     size_t len_packet = 0;
@@ -102,7 +104,7 @@ int main(int argc, char *argv[])
     char *daemon_mode = argv[1]; //daemon parameter
     char *par = "-d";
 
-    
+
 
     //sigaction struct
     struct sigaction sa;
@@ -113,14 +115,14 @@ int main(int argc, char *argv[])
     //Register signal handlers
     //signal(SIGTERM, signal_handler);
     //signal(SIGINT, signal_handler);
-   // sigaction(SIGINT, &sa, 0);
-    //sigaction(SIGTERM, &sa, 0);
-
-     //removes aesdsocketdata file
-     remove(store_file);
+    sigaction(SIGINT, &sa, 0);
+    sigaction(SIGTERM, &sa, 0);
+    
+    //  //removes aesdsocketdata file
+    //  remove(store_file);
 
     //Open Log file
-    openlog(NULL, 0, LOG_USER);
+    //openlog(NULL, 0, LOG_USER);
 
     while(gSignalInterrupt !=1)
     {
@@ -195,8 +197,8 @@ int main(int argc, char *argv[])
             }
 
             fd_set read_fds;
-            int fdmax;
-            int select_status;
+            int fdmax=0;
+            int select_status = 0;
 
             struct timeval timeout;
             timeout.tv_sec = 0.5;  // timeout for select
@@ -204,7 +206,7 @@ int main(int argc, char *argv[])
 
             //loop while waiting for client to connect
             //the logic below is to make the listen no-blocking, so a signal handler can interrupt if necessary
-            while (true) 
+            while (gSignalInterrupt !=1) 
             {
                 
                 FD_ZERO(&read_fds);
@@ -250,13 +252,12 @@ int main(int argc, char *argv[])
         else if (step ==1)
         {          
             //read buffer
-            valread = read(new_socket, buffer, sizeof(buffer));
+            valread = read(new_socket, buffer, MAX_SIZE);
             if (valread >0)
             {
                 //get length of buffer
-                len_buf = strlen(buffer) - 1;
+                len_buf = strlen(buffer)-1;
 
-                //printf("%s buffer\n", buffer);
             
                 for (int j = 0; j <= len_buf; j++) 
                 {
@@ -284,7 +285,7 @@ int main(int argc, char *argv[])
                     if (create_file_and_send_it(store_file, full_packet, len_packet, new_socket) == true)
                     {
                         len_packet = 0;        
-                        memset(full_packet, 0, strlen(full_packet));
+                       // memset(full_packet, 0, strlen(full_packet));
                         printf("All packets sent back to client\n"); 
                     }
                     else
@@ -293,11 +294,10 @@ int main(int argc, char *argv[])
                     }
                     
                 }
-                
-                                        
-                //clear buffer
+                                                       
+                //clear buffer size
+                len_buf = 0;
                 memset(buffer, 0, sizeof(buffer));
-
 
             }
             //client closed connection, buffer empty
