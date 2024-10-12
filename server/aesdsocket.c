@@ -27,29 +27,29 @@ bool create_file_and_send_it(char file_full_path[], char *full_packet, size_t le
 
     //append packet data to file
     fwrite(full_packet, sizeof(char), length, fp1); 
+   // fprintf(fp1, "%s",full_packet);
     //close file
     fclose(fp1);
 
     // opening file in read mode
     fp1 = fopen(file_full_path, "r");
 
-    if (fp1 != NULL) {
            
         //read line-by-line and send it to client
-        while(getline(&line, &len, fp1) != -1) 
-        {
+         while(getline(&line, &len, fp1) != -1) 
+         {
             printf("Sending back: %s", line);
 
             //send data back to client
             send(new_socket, line, strlen(line), 0);
-        }
+         }
 
         // Close the file stream once all lines have been
         // read.
-        fclose(fp1);
-        
-        
-    }
+
+    free(line);
+    fclose(fp1);
+    
 
     success = true;
     return success;
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
     char store_file[] =  "/var/tmp/aesdsocketdata";
     size_t len_packet = 0;
     int step = 0; //state machine steps
-
+    size_t len_buf = 0;
     char *daemon_mode = argv[1]; //daemon parameter
     char *par = "-d";
 
@@ -113,8 +113,8 @@ int main(int argc, char *argv[])
     //Register signal handlers
     //signal(SIGTERM, signal_handler);
     //signal(SIGINT, signal_handler);
-    sigaction(SIGINT, &sa, 0);
-    sigaction(SIGTERM, &sa, 0);
+   // sigaction(SIGINT, &sa, 0);
+    //sigaction(SIGTERM, &sa, 0);
 
      //removes aesdsocketdata file
      remove(store_file);
@@ -250,10 +250,11 @@ int main(int argc, char *argv[])
         else if (step ==1)
         {          
             //read buffer
-            if (valread = read(new_socket, buffer, sizeof(buffer)) >0)
+            valread = read(new_socket, buffer, sizeof(buffer));
+            if (valread >0)
             {
                 //get length of buffer
-                size_t len_buf = strlen(buffer) - 1;
+                len_buf = strlen(buffer) - 1;
 
                 //printf("%s buffer\n", buffer);
             
@@ -283,19 +284,16 @@ int main(int argc, char *argv[])
                     if (create_file_and_send_it(store_file, full_packet, len_packet, new_socket) == true)
                     {
                         len_packet = 0;        
-                        memset(full_packet, 0, sizeof(full_packet));
+                        memset(full_packet, 0, strlen(full_packet));
                         printf("All packets sent back to client\n"); 
                     }
                     else
                     {
                         printf("Failure creating file and sending it back to client\n");
                     }
-                    //break;
+                    
                 }
-                else
-                {
-                    printf("%s packet received\n", full_packet);  
-                }
+                
                                         
                 //clear buffer
                 memset(buffer, 0, sizeof(buffer));
