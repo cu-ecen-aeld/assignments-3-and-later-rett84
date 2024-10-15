@@ -1,0 +1,19 @@
+#! /bin/sh
+
+ARGS="-d"
+
+case "$1" in
+    start)
+        echo "Starting aesdsocket"
+        #start-stop-daemon -S -n aesdsocket -d /usr/bin
+        start-stop-daemon -S -n aesdsocket --exec /home/lucas/Documents/GitHub/assignments-5-part1/server/aesdsocket -- $ARGS
+        ;;
+    stop)
+        echo "Stopping aesdsocket"
+        start-stop-daemon -K -n aesdsocket
+        ;;
+    *)
+        echo "Usage: $0 {start|stop}"
+        exit 1
+    esac
+exit 0

@@ -3,11 +3,11 @@ TARGET = aesdsocket
 OBJS = aesdsocket.c
 
 all: $(OBJS)
-	$(CROSS_COMPILE)gcc $(OBJS) -o $(TARGET)
+	$(CC) $(CFLAGS) $(INCLUDES) $(OBJS) -o $(TARGET) $(LDFLAGS)
 
 
 default: $(OBJS)
-	$(CROSS_COMPILE)gcc $(OBJS) -o $(TARGET)
+	$(CC) $(CFLAGS) $(INCLUDES) $(OBJS) -o $(TARGET) $(LDFLAGS)
 
 clean:
 	rm -f *.o aesdsocket
