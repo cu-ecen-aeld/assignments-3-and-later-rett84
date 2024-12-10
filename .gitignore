@@ -7,3 +7,6 @@ aesd-build
 .vscode/
 test.sh.log
 finder-app/manual-linux (copy).sh
+aesdsocket
+server/aesdsocket
+server/valgrind-out.txt
