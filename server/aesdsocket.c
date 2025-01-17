@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
   
     char *daemon_mode = argv[1]; //daemon parameter
     char *par = "-d";
-    pthread_t tid[60];
+   
 
     struct node* head = NULL;//
     int i = 0;
@@ -271,7 +271,6 @@ int main(int argc, char *argv[])
     pthread_t tid_ts;
     (*args).store_file = store_file;//Parameter for Thread Timestamp function
     pthread_create(&tid_ts, NULL, thread_timestamp, args);
-   // free(args);
 
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
