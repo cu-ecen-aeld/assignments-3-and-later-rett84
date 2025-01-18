@@ -19,6 +19,8 @@ volatile sig_atomic_t gSignalInterrupt = 0;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 bool thread_completed;
 int t_index;
+char store_file[] =  "/var/tmp/aesdsocketdata";    
+
 
 //handler for SIGINT and SIGTERM
 static void signal_handler (int signo)
@@ -46,7 +48,6 @@ static void signal_handler (int signo)
 struct thread_data{;
     int new_socket;
     char *ip_address;
-    char  *store_file;
     int t_index;
 };
 
@@ -65,6 +66,17 @@ struct node {
     *headRef = newNode; 
 } 
 
+//Function to free linked list
+void freeList(struct node* head)
+{
+   struct node* tmp;
+   while (head != NULL)
+    {
+       tmp = head;
+       head = head->next;
+       free(tmp);
+    }
+}
 
 //Socket Thread
 void* threadsocket(void* thread_param)
@@ -79,17 +91,18 @@ void* threadsocket(void* thread_param)
      // declaring file pointers
     FILE *fp1;
 
-   
+    struct thread_data* thread_func_args;
+    thread_func_args = (struct thread_data *) thread_param;
+
+    int new_socket = (*thread_func_args).new_socket;
+    char * ip_address = (*thread_func_args).ip_address;
+   // int new_socket = *((int *)thread_param);
+    free(thread_param);
 
     while(1)
     {
-    
-        struct thread_data* thread_func_args;
-        thread_func_args = (struct thread_data *) thread_param;
-
-        int new_socket = (*thread_func_args).new_socket;
-        char * ip_address = (*thread_func_args).ip_address;
-        char * store_file = (*thread_func_args).store_file;
+        
+        //char * store_file = (*thread_func_args).store_file;
 
         valread = recv(new_socket , buffer , sizeof(buffer),0);
 
@@ -132,6 +145,7 @@ void* threadsocket(void* thread_param)
                 } 
 
                 fclose(fp1);
+                free(line);
                 memset(buffer, '\0', sizeof(buffer));
             }
         }
@@ -143,7 +157,7 @@ void* threadsocket(void* thread_param)
             if (!thread_completed)
             {
                 pthread_mutex_lock(&lock);
-                t_index = (*thread_func_args).t_index;
+                //t_index = (*thread_func_args).t_index;
                 thread_completed =true;
                 pthread_mutex_unlock(&lock);
             }
@@ -171,27 +185,29 @@ void *thread_timestamp(void *thread_param)
 
     time_t rawtime;
     struct tm * timeinfo;
-    struct timeval t1, t2;
-    double elapsedTime;
+    //struct timeval t1, t2;
+    //double elapsedTime;
    
     // start timer
-    gettimeofday(&t1, NULL);// start timer
+    //gettimeofday(&t1, NULL);// start timer
 
    
     while(1)
     {
 
-        struct thread_data* thread_func_args;
-        thread_func_args = (struct thread_data *) thread_param;
+        //struct thread_data* thread_func_args;
+        //thread_func_args = (struct thread_data *) thread_param;
 
-        char * file_full_path = (thread_func_args)->store_file;
+       // char * file_full_path = (thread_func_args)->store_file;
 
         // t2 timer
-        gettimeofday(&t2, NULL);
+        //gettimeofday(&t2, NULL);
 
         // compute and print the elapsed time
-        elapsedTime = (t2.tv_sec - t1.tv_sec);// sec 
-        if (elapsedTime>=10)
+        //elapsedTime = (t2.tv_sec - t1.tv_sec);// sec 
+        sleep(10);
+        //if (elapsedTime>=10)
+        if (1)
         {
             
             time ( &rawtime );
@@ -204,7 +220,7 @@ void *thread_timestamp(void *thread_param)
             strcat(str, "\n");
 
             // opening file in append mode   
-            fp1 = fopen(file_full_path, "a");
+            fp1 = fopen(store_file, "a");
             //append packet data to file
             pthread_mutex_lock(&lock);
             fwrite(str, sizeof(char), strlen(str), fp1); 
@@ -212,8 +228,8 @@ void *thread_timestamp(void *thread_param)
             //close file
             fclose(fp1);
             
-            elapsedTime = 0;
-            gettimeofday(&t1, NULL);// get time
+            //elapsedTime = 0;
+            //gettimeofday(&t1, NULL);// get time
         }
     } 
 }
@@ -227,15 +243,15 @@ int main(int argc, char *argv[])
     ********************************
     */
     int server_fd=0;
-    
-    char store_file[] =  "/var/tmp/aesdsocketdata";
-    
+    int new_socket=0;
+    //char store_file[] =  "/var/tmp/aesdsocketdata";
     char ip_address[INET_ADDRSTRLEN];
+ 
     
     struct sockaddr_in address;
     int opt = 1;
    
-    struct thread_data *args = malloc(sizeof *args);
+    
   
     char *daemon_mode = argv[1]; //daemon parameter
     char *par = "-d";
@@ -269,8 +285,8 @@ int main(int argc, char *argv[])
 
     //TimeStamp Thread
     pthread_t tid_ts;
-    (*args).store_file = store_file;//Parameter for Thread Timestamp function
-    pthread_create(&tid_ts, NULL, thread_timestamp, args);
+  //  (*args).store_file = store_file;//Parameter for Thread Timestamp function
+    pthread_create(&tid_ts, NULL, thread_timestamp, 0);
 
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -342,12 +358,14 @@ int main(int argc, char *argv[])
     timeout.tv_sec = 0.5;  // timeout for select
     timeout.tv_usec = 0;
 
-
-    
+     
+   
     //loop while waiting for client to connect
-    while (gSignalInterrupt !=1) //)
+    while (gSignalInterrupt !=1) //)gSignalInterrupt !=1
     {
-            int new_socket=0;
+        
+       
+           
 
             fd_set read_fds;
             int fdmax=0;
@@ -374,6 +392,7 @@ int main(int argc, char *argv[])
             } 
             else if (select_status > 0) 
             {
+               
                 // Accept a connection
                 socklen_t addrlen = sizeof(address);
                 new_socket = accept(server_fd, (struct sockaddr*)&address,&addrlen);
@@ -387,17 +406,18 @@ int main(int argc, char *argv[])
                 syslog(LOG_DEBUG,"Accepted connection from  %s\n", inet_ntoa(address.sin_addr));
 
                 //Struct for thread data
-                args = malloc(sizeof *args); //malloc here fixed use of repeated socket FD
-
+                struct thread_data *args = malloc(sizeof *args); //malloc here fixed use of repeated socket FD
+                //args = realloc(args,sizeof *args);
                 //convert IP address to char
                 inet_ntop(AF_INET, &(address.sin_addr), ip_address, INET_ADDRSTRLEN);
                 i++;
                 //Parameters for Thread Socket function
                 (*args).new_socket = new_socket;
-                (*args).store_file = store_file;
+               // (*args).store_file = store_file;
                 (*args).ip_address = ip_address;
                 (*args).t_index = i;
 
+                
                 //Add item to head of linked list when there is a new connection
                  Insert_to_List(&head, i);
                 
@@ -406,6 +426,8 @@ int main(int argc, char *argv[])
                 //so the main thread can entertain next request
                 if( pthread_create(&head->tid, NULL, threadsocket, args) != 0 )
                     printf("Failed to create thread\n");
+
+                
             }
 
             //Check which thraad has completed and join it
@@ -419,12 +441,12 @@ int main(int argc, char *argv[])
                         pthread_join((*current).tid,NULL);
                         thread_completed = false;
                         t_index = 0;
+                        
                     }
-                }  
-            }
+                } 
+            }  
+        
     }
-
-    
 
     printf("Exiting application\n");
     //removes aesdsocketdata file
@@ -432,7 +454,8 @@ int main(int argc, char *argv[])
     // closing the listening socket
     close(server_fd);
     //release memory
-    free(args);
+    //free(args);
+    freeList(head);
     return 0;
     exit (EXIT_SUCCESS);
 }
