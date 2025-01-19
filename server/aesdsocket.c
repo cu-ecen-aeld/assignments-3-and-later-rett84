@@ -96,8 +96,8 @@ void* threadsocket(void* thread_param)
 
     int new_socket = (*thread_func_args).new_socket;
     char * ip_address = (*thread_func_args).ip_address;
-   // int new_socket = *((int *)thread_param);
-    free(thread_param);
+
+    
 
     while(1)
     {
@@ -157,8 +157,9 @@ void* threadsocket(void* thread_param)
             if (!thread_completed)
             {
                 pthread_mutex_lock(&lock);
-                //t_index = (*thread_func_args).t_index;
+                t_index = (*thread_func_args).t_index;
                 thread_completed =true;
+                free(thread_param);
                 pthread_mutex_unlock(&lock);
             }
             
@@ -174,7 +175,7 @@ void* threadsocket(void* thread_param)
     return thread_param;     
 }
 
-void *thread_timestamp(void *thread_param)
+bool write_timestamp(struct timeval t1, struct timeval t2)
 {
     char str[255];
     char rfc_2822[40];
@@ -186,30 +187,16 @@ void *thread_timestamp(void *thread_param)
     time_t rawtime;
     struct tm * timeinfo;
     //struct timeval t1, t2;
-    //double elapsedTime;
+    double elapsedTime;
    
-    // start timer
-    //gettimeofday(&t1, NULL);// start timer
-
-   
-    while(1)
-    {
-
-        //struct thread_data* thread_func_args;
-        //thread_func_args = (struct thread_data *) thread_param;
-
-       // char * file_full_path = (thread_func_args)->store_file;
-
-        // t2 timer
-        //gettimeofday(&t2, NULL);
 
         // compute and print the elapsed time
-        //elapsedTime = (t2.tv_sec - t1.tv_sec);// sec 
-        sleep(10);
-        //if (elapsedTime>=10)
-        if (1)
+        elapsedTime = (t2.tv_sec - t1.tv_sec);// sec 
+
+        //sleep(10);
+       
+        if (elapsedTime>=10)
         {
-            
             time ( &rawtime );
             timeinfo = localtime ( &rawtime );
             
@@ -228,10 +215,12 @@ void *thread_timestamp(void *thread_param)
             //close file
             fclose(fp1);
             
-            //elapsedTime = 0;
-            //gettimeofday(&t1, NULL);// get time
-        }
-    } 
+            return true;
+            exit;
+           
+        
+        } 
+        return false;
 }
 
 
@@ -284,9 +273,9 @@ int main(int argc, char *argv[])
     } 
 
     //TimeStamp Thread
-    pthread_t tid_ts;
-  //  (*args).store_file = store_file;//Parameter for Thread Timestamp function
-    pthread_create(&tid_ts, NULL, thread_timestamp, 0);
+   // pthread_t tid_ts;
+
+   // pthread_create(&tid_ts, NULL, thread_timestamp, 0);
 
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -358,12 +347,24 @@ int main(int argc, char *argv[])
     timeout.tv_sec = 0.5;  // timeout for select
     timeout.tv_usec = 0;
 
-     
-   
+
+    struct timeval t1, t2;
+    gettimeofday(&t1, NULL);// get time
     //loop while waiting for client to connect
     while (gSignalInterrupt !=1) //)gSignalInterrupt !=1
     {
-        
+
+      
+        //Compute elapsed time
+        gettimeofday(&t2, NULL);
+        bool ret;
+        ret = write_timestamp(t1,t2);
+        if (ret)
+        {
+            gettimeofday(&t1, NULL);// get time
+        }
+
+       
        
            
 
@@ -441,7 +442,6 @@ int main(int argc, char *argv[])
                         pthread_join((*current).tid,NULL);
                         thread_completed = false;
                         t_index = 0;
-                        
                     }
                 } 
             }  
