@@ -89,8 +89,7 @@ void aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const s
 
 
     if( in_off >10)
-    {
-        
+    {       
          out_off =  out_off+1;
         for (size_t i = 0; i <10; i++)
         {
@@ -118,6 +117,7 @@ void aesd_circular_buffer_init(struct aesd_circular_buffer *buffer)
     memset(buffer,0,sizeof(struct aesd_circular_buffer));
 }
 
+//For testing L.Rettore
  /* static void write_circular_buffer_packet(struct aesd_circular_buffer *buffer,
                                          const char *writestr)
 {
