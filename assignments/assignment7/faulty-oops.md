@@ -1,3 +1,7 @@
+### OOPS Analysis
+## L. Rettore
+
+
 Internal error: Oops: 0000000096000045 [#1] SMP
 Modules linked in: hello(O) faulty(O) scull(O)
 CPU: 0 PID: 154 Comm: sh Tainted: G           O       6.1.44 #1
@@ -17,7 +21,7 @@ x8 : 0000000000000000 x7 : 0000000000000000 x6 : 0000000000000000
 x5 : 0000000000000001 x4 : ffffffc000787000 x3 : ffffffc008e03dc0
 x2 : 0000000000000012 x1 : 0000000000000000 x0 : 0000000000000000
 Call trace:
- faulty_write+0x10/0x20 [faulty]
+ faulty_write+0x10/0x20 [faulty]    # --> fault writing to byte 10 of 20 of [faulty module]
  ksys_write+0x74/0x110
  __arm64_sys_write+0x1c/0x30
 
