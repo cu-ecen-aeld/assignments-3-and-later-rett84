@@ -32,30 +32,39 @@ struct aesd_buffer_entry *aesd_circular_buffer_find_entry_offset_for_fpos(struct
             size_t char_offset, size_t *entry_offset_byte_rtn )
 {
 
-    struct aesd_buffer_entry *entry;
-    entry = malloc(sizeof(struct aesd_buffer_entry));
+    size_t  in_off;
+    size_t  out_off;
+
+  
+
+    in_off = (*buffer).in_offs;
+    out_off = (*buffer).out_offs;
    
     size_t entry_size_total = 0;
-    size_t entry_size_total_prev = 0;
-    for (size_t i = 0; i < 10; i++)
+
+
+
+    size_t i = out_off;
+
+    while (i != in_off  || buffer->full)
     {
-        if (i>0) entry_size_total_prev = (*buffer).entry[i-1].size +  entry_size_total_prev;
+        if (buffer->entry[i].size == 0)
+            return NULL;
+
+
         entry_size_total = ((*buffer).entry[i].size) + entry_size_total;
-        
-        if(char_offset < (*buffer).entry[0].size)
-        {
-            *entry_offset_byte_rtn = char_offset;
-            *entry = (*buffer).entry[i];
-            printf("%s",(*buffer).entry[i].buffptr);
-            return entry;
-        }     
+           
         if ((entry_size_total > char_offset))
         {
-            *entry_offset_byte_rtn = (char_offset - entry_size_total_prev);
-            *entry = (*buffer).entry[i];
-            printf("%s", (*entry).buffptr);
-            return entry;
+            size_t start_of_this_entry = (entry_size_total - buffer->entry[i].size);
+            *entry_offset_byte_rtn = (char_offset - start_of_this_entry); //computes the offset from within the entry
+           // printk("%s", (*entry).buffptr);
+            return &buffer->entry[i];
         }
+
+        i++;
+        if ( i>= AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED)//wrap around
+            i = 0;
     }
     return NULL;
 }
@@ -81,29 +90,32 @@ void aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const s
     in_off = (*buffer).in_offs;
     out_off = (*buffer).out_offs;
   
-    if(in_off < 10) (*buffer).entry[in_off] = *add_entry;
+   
+    
+    (*buffer).entry[in_off] = *add_entry;
 
-    if(in_off < 10) printf("%s",(*buffer).entry[in_off].buffptr);
+    //if(in_off < 10) printk("%s",(*buffer).entry[in_off].buffptr);
    
     in_off = in_off+1;
 
+    if(in_off >= AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED) 
+        in_off=0;
+   
 
-    if( in_off >10)
+    if( in_off == out_off)
     {       
-         out_off =  out_off+1;
-        for (size_t i = 0; i <10; i++)
-        {
-            if (i<9) (*buffer).entry[i] =  (*buffer).entry[i+1];
-        }
+        buffer->full = true;
+        out_off = out_off+1;
         
-        if( out_off >=10)
-        {
-              out_off = 0;
-        }
-
-        in_off = 9;
-        (*buffer).entry[in_off] = *add_entry;
     }
+    else
+    {
+        buffer->full = false;
+    }
+
+     
+    if( out_off >=AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED) 
+        out_off = 0;
         
      (*buffer).in_offs = in_off;
      (*buffer).out_offs = out_off;

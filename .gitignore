@@ -10,3 +10,16 @@ finder-app/manual-linux (copy).sh
 aesdsocket
 server/aesdsocket
 server/valgrind-out.txt
+aesd-char-driver/Module.symvers
+aesd-char-driver/.Module.symvers.cmd
+aesd-char-driver/.modules.order.cmd
+aesd-char-driver/.aesd-circular-buffer.o.cmd
+aesd-char-driver/.aesdchar.mod.o.cmd
+aesd-char-driver/.aesdchar.mod.cmd
+aesd-char-driver/.aesdchar.ko.cmd
+aesd-char-driver/.aesdchar.o.cmd
+aesd-char-driver/aesdchar.ko
+aesd-char-driver/modules.order
+aesd-char-driver/.main.o.cmd
+aesd-char-driver/aesdchar.mod
+aesd-char-driver/aesdchar.mod.c

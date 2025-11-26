@@ -4,7 +4,7 @@
  *  Created on: Oct 23, 2019
  *      Author: Dan Walkes
  */
-
+#include "aesd-circular-buffer.h"
 #ifndef AESD_CHAR_DRIVER_AESDCHAR_H_
 #define AESD_CHAR_DRIVER_AESDCHAR_H_
 
@@ -28,7 +28,12 @@ struct aesd_dev
     /**
      * TODO: Add structure(s) and locks needed to complete assignment requirements
      */
-    struct cdev cdev;     /* Char device structure      */
+    struct cdev cdev; // char device structure
+    struct mutex lock; // mutex for thread safety
+    struct aesd_circular_buffer cbuf; // the circular buffer for storage
+    struct aesd_buffer_entry entry; // for accumulating partial commands
+    struct aesd_buffer_entry tmp_entry;
+    size_t size; // total number of bytes stored
 };
 
 
