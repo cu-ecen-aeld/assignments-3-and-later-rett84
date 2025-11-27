@@ -41,7 +41,7 @@ struct aesd_buffer_entry *aesd_circular_buffer_find_entry_offset_for_fpos(struct
     out_off = (*buffer).out_offs;
    
     size_t entry_size_total = 0;
-
+    size_t ctrl = 0;
 
 
     size_t i = out_off;
@@ -63,8 +63,12 @@ struct aesd_buffer_entry *aesd_circular_buffer_find_entry_offset_for_fpos(struct
         }
 
         i++;
+        ctrl++;
         if ( i>= AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED)//wrap around
             i = 0;
+        
+        if (ctrl >= AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED)
+            break; //prevent infinite loop
     }
     return NULL;
 }
@@ -100,26 +104,20 @@ void aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const s
 
     if(in_off >= AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED) 
         in_off=0;
-   
 
-    if( in_off == out_off)
-    {       
-        buffer->full = true;
-        out_off = out_off+1;
-        
-    }
-    else
-    {
-        buffer->full = false;
+    // if buffer was already full, advance out_off to overwrite oldest
+    if(buffer->full) {
+        out_off++;
+        if(out_off >= AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED)
+            out_off = 0;
     }
 
-     
-    if( out_off >=AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED) 
-        out_off = 0;
-        
-     (*buffer).in_offs = in_off;
-     (*buffer).out_offs = out_off;
-}
+    // update full flag: buffer is full if in_off catches up to out_off
+    buffer->full = (in_off == out_off);
+            
+    (*buffer).in_offs = in_off;
+    (*buffer).out_offs = out_off;
+    }
 
 /**
 * Initializes the circular buffer described by @param buffer to an empty struct

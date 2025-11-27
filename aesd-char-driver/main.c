@@ -197,16 +197,23 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     }
     memcpy(entry_buf, savedData, countOld);
 
+   
     dev->entry.buffptr= entry_buf;
     dev->entry.size=countOld;
+    printk(KERN_DEBUG "aesd_write: entry_buf contents: %.*s\n", (int)countOld, entry_buf);
 
-    
+    printk(KERN_DEBUG "aesd_write: countOld = %zu\n", countOld);
 
 
     // Check if the string is empty to avoid accessing an invalid index
     if (count > 0) {
+        printk(KERN_DEBUG "aesd_write: last char of kbuf = '%c' (0x%x)\n", kbuf[count-1], kbuf[count-1]);
         // Access the last character and compare
         if (kbuf[count-1] == endStr) {
+             printk(KERN_DEBUG "aesd_write: entry_buf stored: %.*s\n",
+            (int)countOld, entry_buf);
+
+
             aesd_circular_buffer_add_entry(&dev->cbuf,&dev->entry);
             kfree(savedData);
             savedData = NULL;
