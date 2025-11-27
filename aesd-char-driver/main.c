@@ -29,7 +29,7 @@ int aesd_minor =   0;
 MODULE_AUTHOR("Lucas Rettore"); 
 MODULE_LICENSE("Dual BSD/GPL");
 
-static struct aesd_dev aesd_device[NUM_DEV];
+static struct aesd_dev aesd_device;
 static struct class *dev_class;
 
 

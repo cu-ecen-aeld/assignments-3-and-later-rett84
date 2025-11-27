@@ -1,0 +1,2 @@
+#!/bin/sh
+/sbin/insmod /usr/lib/modules/$(uname -r)/extra/aesdchar.ko
