@@ -33,12 +33,6 @@ struct aesd_dev aesd_device;
 static struct class *dev_class;
 
 
-int countOld = 0;
-int writeCount = 0;
-static char *savedData = NULL;
-
-
-
 
 int aesd_open(struct inode *inode, struct file *filp)
 {
@@ -142,82 +136,74 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
 {
     struct aesd_dev *dev; /* device information */
     dev = filp->private_data; 
+
+
     
    
-
-    mutex_lock(&dev->lock);
+   mutex_lock(&dev->lock);
     ssize_t retval = -ENOMEM;
 
     char *kbuf = kmalloc(count, GFP_KERNEL);
     if (!kbuf)
+    {
+        mutex_unlock(&dev->lock);
         return -ENOMEM;
-
+    }
+        
 
     if (copy_from_user(kbuf, buf, count)!=0) {
+
         kfree(kbuf);
+        mutex_unlock(&dev->lock);
         return -EFAULT;
     }
 
 
     
-
-    char *tempBuf = kmalloc(count+countOld, GFP_KERNEL);
+    //allocate memory to temporary buffer
+    char *tempBuf = kmalloc(count+dev->tmp_entry.size, GFP_KERNEL);
     if (!tempBuf)
     {
         kfree(kbuf);
+        mutex_unlock(&dev->lock);
         return -ENOMEM;
     }
        
 
-    if (savedData!=NULL)
+    if (dev->tmp_entry.buffptr!=NULL)
     {
-        memcpy(tempBuf, savedData, countOld);
-        kfree(savedData);
+        //copy stored buffer to temporary buffer
+        memcpy(tempBuf, dev->tmp_entry.buffptr, dev->tmp_entry.size);
+        kfree(dev->tmp_entry.buffptr);
     }
-    //append data to the end, needs offset
-    memcpy(tempBuf+countOld, kbuf, count);
 
 
+    //append data from user to the end of temp buffer then needs offset --> dev->tmp_entry.size
+    memcpy(tempBuf+dev->tmp_entry.size, kbuf, count);
 
 
-
-
-    savedData = tempBuf;
-    countOld = count+countOld; //increment total buffer size count after data append
+    dev->tmp_entry.size += count; //increment total buffer size count after data append
+    dev->tmp_entry.buffptr = tempBuf; //we save the buffer with new data for a new write until we see a \n
    
-
+   
     char endStr = '\n';
-
-    char *entry_buf = kmalloc(countOld, GFP_KERNEL);
-    if (!entry_buf)
-    {
-        kfree(kbuf);
-        kfree(tempBuf);
-        return -ENOMEM; 
-    }
-    memcpy(entry_buf, savedData, countOld);
-
    
-    dev->entry.buffptr= entry_buf;
-    dev->entry.size=countOld;
-    printk(KERN_DEBUG "aesd_write: entry_buf contents: %.*s\n", (int)countOld, entry_buf);
 
-    printk(KERN_DEBUG "aesd_write: countOld = %zu\n", countOld);
-
-
-    // Check if the string is empty to avoid accessing an invalid index
+    //Check if the string is empty to avoid accessing an invalid index
     if (count > 0) {
         printk(KERN_DEBUG "aesd_write: last char of kbuf = '%c' (0x%x)\n", kbuf[count-1], kbuf[count-1]);
         // Access the last character and compare
         if (kbuf[count-1] == endStr) {
-             printk(KERN_DEBUG "aesd_write: entry_buf stored: %.*s\n",
-            (int)countOld, entry_buf);
 
+            dev->entry.buffptr= dev->tmp_entry.buffptr;
+            dev->entry.size=dev->tmp_entry.size;
+            printk(KERN_DEBUG "aesd_write: entry_buf contents: %.*s\n", (int)dev->tmp_entry.size, dev->tmp_entry.buffptr);
+            printk(KERN_DEBUG "aesd_write: countOld = %zu\n", dev->tmp_entry.size);
 
             aesd_circular_buffer_add_entry(&dev->cbuf,&dev->entry);
-            kfree(savedData);
-            savedData = NULL;
-            countOld = 0;
+            //kfree(dev->tmp_entry.buffptr);
+            dev->tmp_entry.buffptr = NULL;
+            dev->tmp_entry.size = 0;
         } 
     }
 
@@ -231,8 +217,6 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     //to do yet
     return retval;
 }
-
-
 
 
 struct file_operations aesd_fops = {

@@ -113,7 +113,13 @@ void aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const s
     }
 
     // update full flag: buffer is full if in_off catches up to out_off
-    buffer->full = (in_off == out_off);
+    if (in_off == out_off)
+    {
+        buffer->full = true;
+    }
+    else{
+        buffer->full = false;
+    }
             
     (*buffer).in_offs = in_off;
     (*buffer).out_offs = out_off;

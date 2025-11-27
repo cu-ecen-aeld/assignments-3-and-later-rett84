@@ -1,3 +1,13 @@
+#ifndef USE_AESD_CHAR_DEVICE
+#define USE_AESD_CHAR_DEVICE 1   // default value
+#endif
+
+#ifdef USE_AESD_CHAR_DEVICE
+char *store_file = "/dev/aesdchar";
+#else
+char *store_file = "/var/tmp/aesdsocketdata";
+#endif
+
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,11 +25,12 @@
 #define PORT 9000
 #define MAX_SIZE 1000
 
+
 volatile sig_atomic_t gSignalInterrupt = 0;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 bool thread_completed;
 int t_index;
-char store_file[] =  "/var/tmp/aesdsocketdata";    
+
 
 
 //handler for SIGINT and SIGTERM
@@ -118,7 +129,7 @@ void* threadsocket(void* thread_param)
 
             //append packet data to file
             pthread_mutex_lock(&lock);
-            fwrite(buffer, sizeof(char), strlen(buffer), fp1); 
+            fwrite(buffer, 1, strlen(buffer), fp1); 
             pthread_mutex_unlock(&lock);
             //close file
             fclose(fp1);
@@ -262,7 +273,8 @@ int main(int argc, char *argv[])
     sigaction(SIGTERM, &sa, 0);
     
     //removes aesdsocketdata file
-    remove(store_file);
+    if (USE_AESD_CHAR_DEVICE == 0)
+        remove(store_file);
 
     //Open Log file
     //openlog(NULL, 0, LOG_USER);
@@ -355,19 +367,18 @@ int main(int argc, char *argv[])
     {
 
       
-        //Compute elapsed time
-        gettimeofday(&t2, NULL);
-        bool ret;
-        ret = write_timestamp(t1,t2);
-        if (ret)
+        if (USE_AESD_CHAR_DEVICE==0)
         {
-            gettimeofday(&t1, NULL);// get time
+            //Compute elapsed time
+            gettimeofday(&t2, NULL);
+            bool ret;
+            ret = write_timestamp(t1,t2);
+            if (ret)
+            {
+                gettimeofday(&t1, NULL);// get time
+            }
         }
-
-       
-       
-           
-
+      
             fd_set read_fds;
             int fdmax=0;
             int select_status = 0;
@@ -449,8 +460,11 @@ int main(int argc, char *argv[])
     }
 
     printf("Exiting application\n");
+    
     //removes aesdsocketdata file
-    remove(store_file);
+    if (USE_AESD_CHAR_DEVICE == 0)
+        remove(store_file);
+        
     // closing the listening socket
     close(server_fd);
     //release memory
