@@ -180,6 +180,8 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
 
 
 
+
+
     savedData = tempBuf;
     countOld = count+countOld; //increment total buffer size count after data append
    
@@ -200,6 +202,7 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
 
     
 
+
     // Check if the string is empty to avoid accessing an invalid index
     if (count > 0) {
         // Access the last character and compare
@@ -214,12 +217,17 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
   
     PDEBUG("write %zu bytes with offset %lld",count,*f_pos);
     mutex_unlock(&dev->lock);
+
     kfree(kbuf);
     retval=count;
 
     //to do yet
     return retval;
 }
+
+
+
+
 struct file_operations aesd_fops = {
     .owner =    THIS_MODULE,
     .read =     aesd_read,
@@ -240,14 +248,14 @@ static int aesd_setup_cdev(struct aesd_dev *dev)
         printk(KERN_ERR "Error %d adding aesd cdev", err);
     }
 
-    //Creating struct class
+    /* Creating struct class */
     if ((dev_class = class_create("aesd_class")) == NULL) {
         printk(KERN_INFO "Cannot create the struct class\n");
         goto r_class;
     }
 
     //Creating device - not using mknod
-    if ((device_create(dev_class, NULL, devno, NULL, "aesd_device")) == NULL) {
+    if ((device_create(dev_class, NULL, devno, NULL, "aesdchar")) == NULL) {
         printk(KERN_INFO "Cannot create the Device\n");
         goto r_device;
     }
@@ -258,6 +266,7 @@ static int aesd_setup_cdev(struct aesd_dev *dev)
     r_device:
         class_destroy(dev_class);
     r_class:
+        cdev_del(&dev->cdev);
         err = -1;
 
 
@@ -300,8 +309,8 @@ int aesd_init_module(void)
 void aesd_cleanup_module(void)
 {
     dev_t devno = MKDEV(aesd_major, aesd_minor);
-   
-
+    device_destroy(dev_class, devno);
+    class_destroy(dev_class);
     cdev_del(&aesd_device.cdev);
     uint8_t index;
     struct aesd_buffer_entry *entry;
