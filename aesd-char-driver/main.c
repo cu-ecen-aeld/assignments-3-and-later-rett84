@@ -24,12 +24,12 @@
 int aesd_major =   0; // use dynamic major
 int aesd_minor =   0;
 
-#define NUM_DEVICES 1
+#define NUM_DEV 1 //number of devices to add
 
 MODULE_AUTHOR("Lucas Rettore"); 
 MODULE_LICENSE("Dual BSD/GPL");
 
-struct aesd_dev aesd_device;
+static struct aesd_dev aesd_device[NUM_DEV];
 static struct class *dev_class;
 
 
@@ -39,7 +39,7 @@ int aesd_open(struct inode *inode, struct file *filp)
     PDEBUG("open");
     
     int minor = iminor(inode);
-     if (minor >= NUM_DEVICES)
+     if (minor >= NUM_DEV)
         return -ENODEV;
 
     struct aesd_dev *dev; /* device information */
@@ -270,7 +270,7 @@ int aesd_init_module(void)
 {
     dev_t dev = 0;
     int result;
-    result = alloc_chrdev_region(&dev, aesd_minor, 1,
+    result = alloc_chrdev_region(&dev, aesd_minor, NUM_DEV,
             "aesdchar");
     aesd_major = MAJOR(dev);
     if (result < 0) {
