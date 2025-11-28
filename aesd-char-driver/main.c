@@ -240,10 +240,13 @@ static int aesd_setup_cdev(struct aesd_dev *dev)
     }
 
     /* Creating struct class */
-    if ((dev_class = class_create("aesd_class")) == NULL) {
-        printk(KERN_INFO "Cannot create the struct class\n");
-        goto r_class;
-    }
+    #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
+        // For Kernel 6.4.0 and newer (uses only one argument)
+        dev_class = class_create("aesd_class");
+    #else
+        // For older kernels (uses two arguments)
+        dev_class = class_create(THIS_MODULE, "aesd_class");
+    #endif
 
     //Creating device - not using mknod
     if ((device_create(dev_class, NULL, devno, NULL, "aesdchar")) == NULL) {
