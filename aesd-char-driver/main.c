@@ -10,7 +10,7 @@
  * @copyright Copyright (c) 2019
  *
  */
-
+#include <linux/version.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/printk.h>
