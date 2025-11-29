@@ -160,31 +160,24 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
 
 
     
-    //allocate memory to temporary buffer
-    char *tempBuf = kmalloc(count+dev->tmp_entry.size, GFP_KERNEL);
+    //allocate memory to temporary buffer to expand tmp_entry
+    char *tempBuf = krealloc(dev->tmp_entry.buffptr, count+dev->tmp_entry.size, GFP_KERNEL);
     if (!tempBuf)
     {
         kfree(kbuf);
         mutex_unlock(&dev->lock);
         return -ENOMEM;
     }
-       
+    
+    //tmp_entry points to the new allocated expanded memory
+    dev->tmp_entry.buffptr = tempBuf;
+    
 
-    if (dev->tmp_entry.buffptr!=NULL)
-    {
-        //copy stored buffer to temporary buffer
-        memcpy(tempBuf, dev->tmp_entry.buffptr, dev->tmp_entry.size);
-        kfree(dev->tmp_entry.buffptr);
-    }
+    //to append data from user to the end of temp buffer needs offset --> dev->tmp_entry.size
+    memcpy(dev->tmp_entry.buffptr + dev->tmp_entry.size, kbuf, count);
 
-
-    //append data from user to the end of temp buffer then needs offset --> dev->tmp_entry.size
-    memcpy(tempBuf+dev->tmp_entry.size, kbuf, count);
-
-
-    dev->tmp_entry.size += count; //increment total buffer size count after data append
-    dev->tmp_entry.buffptr = tempBuf; //we save the buffer with new data for a new write until we see a \n
-   
+    //update size
+    dev->tmp_entry.size += count;
    
     char endStr = '\n';
    
