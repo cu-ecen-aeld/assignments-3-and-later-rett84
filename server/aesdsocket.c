@@ -133,6 +133,7 @@ void* threadsocket(void* thread_param)
 
             if (is_ioctl_cmd!=NULL)
             {
+                int char_driver_fd = open("/dev/aesdchar", O_RDWR);
                 printf("IOCTL Message found: %s",is_ioctl_cmd);
                 char *colon = strchr(buffer, ':');
                 char *comma = strchr(buffer, ',');
@@ -152,6 +153,7 @@ void* threadsocket(void* thread_param)
                 printf("Read IOCTL: %s",read_ioctl);
                 send(new_socket, read_ioctl, n, 0);
                 pthread_mutex_unlock(&lock);
+                close(char_driver_fd);
                 
             }
             else
@@ -299,7 +301,7 @@ int main(int argc, char *argv[])
     struct node* head = NULL;//
     int i = 0;
 
-   int char_driver_fd = open("/dev/aesdchar", O_RDWR);
+   
 
 
     //sigaction struct
@@ -503,7 +505,7 @@ int main(int argc, char *argv[])
     }
 
     printf("Exiting application\n");
-    close(char_driver_fd);
+    
     //removes aesdsocketdata file
     if (USE_AESD_CHAR_DEVICE == 0)
         remove(store_file);
