@@ -22,6 +22,9 @@ char *store_file = "/var/tmp/aesdsocketdata";
 #include <errno.h>
 #include <pthread.h>
 #include <sys/time.h>
+#include <sys/ioctl.h>
+#include <fcntl.h>
+#include "../aesd-char-driver/aesd_ioctl.h"
 #define PORT 9000
 #define MAX_SIZE 1000
 
@@ -30,8 +33,8 @@ volatile sig_atomic_t gSignalInterrupt = 0;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 bool thread_completed;
 int t_index;
-
-
+char read_ioctl[1024];
+struct aesd_seekto seekto;
 
 //handler for SIGINT and SIGTERM
 static void signal_handler (int signo)
@@ -60,6 +63,7 @@ struct thread_data{;
     int new_socket;
     char *ip_address;
     int t_index;
+    int char_driver_fd;
 };
 
 struct node {
@@ -107,6 +111,9 @@ void* threadsocket(void* thread_param)
 
     int new_socket = (*thread_func_args).new_socket;
     char * ip_address = (*thread_func_args).ip_address;
+    int char_driver_fd = thread_func_args->char_driver_fd;
+
+    
 
     
 
@@ -119,45 +126,77 @@ void* threadsocket(void* thread_param)
 
         if (valread>0)
         {
+           
+        
+            char *is_ioctl_cmd = strstr(buffer, "AESDCHAR_IOCSEEKTO");
+            
 
-            printf("Echo Message: %s",buffer);
-            //get length of buffer
-            len_buf = strlen(buffer)-1;
-
-            // opening file in append mode
-            fp1 = fopen(store_file, "a");
-
-            //append packet data to file
-            pthread_mutex_lock(&lock);
-            fwrite(buffer, 1, strlen(buffer), fp1); 
-            pthread_mutex_unlock(&lock);
-            //close file
-            fclose(fp1);
-
-
-          //end of packet compare
-           if (buffer[len_buf] == new_line_char[0])
+            if (is_ioctl_cmd!=NULL)
             {
+                printf("IOCTL Message found: %s",is_ioctl_cmd);
+                char *colon = strchr(buffer, ':');
+                char *comma = strchr(buffer, ',');
 
-                char *line = NULL;
-                size_t len = 0;
-               
-                // opening file in read mode
-                fp1 = fopen(store_file, "r");
+                int write_cmd = strtol(colon + 1, &colon, 10);
+                int write_cmd_offset = strtol(comma + 1, NULL, 10);
+                seekto.write_cmd = (write_cmd);
+                seekto.write_cmd_offset = write_cmd_offset;
+                pthread_mutex_lock(&lock);
+                printf("write cmd IOCTL: %i",write_cmd);
+                printf("write cmd offset IOCTL: %i",write_cmd_offset);
 
+                int ret = ioctl(char_driver_fd,AESDCHAR_IOCSEEKTO,&seekto);
+                //send data back to client
+                ssize_t n = read(char_driver_fd, read_ioctl, sizeof(read_ioctl));
+
+                printf("Read IOCTL: %s",read_ioctl);
+                send(new_socket, read_ioctl, n, 0);
+                pthread_mutex_unlock(&lock);
                 
-                //read line-by-line and send it to client
-                 while(getline(&line, &len, fp1) != -1) 
-                {
-                   // printf("Sending back: %s", line);
+            }
+            else
+            {
+                printf("Echo Message Not IOCTL: %s",buffer);
+                //get length of buffer
+                len_buf = strlen(buffer)-1;
 
-                    //send data back to client
-                    send(new_socket, line, strlen(line), 0);
-                } 
+                // opening file in append mode
+                fp1 = fopen(store_file, "a");
 
+                //append packet data to file
+                pthread_mutex_lock(&lock);
+                fwrite(buffer, 1, strlen(buffer), fp1); 
+                pthread_mutex_unlock(&lock);
+                //close file
                 fclose(fp1);
-                free(line);
-                memset(buffer, '\0', sizeof(buffer));
+
+
+                //end of packet compare
+                if (buffer[len_buf] == new_line_char[0])
+                    {
+
+                        char *line = NULL;
+                        size_t len = 0;
+
+
+                    
+                        // opening file in read mode
+                        fp1 = fopen(store_file, "r");
+
+                        
+                        //read line-by-line and send it to client
+                        while(getline(&line, &len, fp1) != -1) 
+                        {
+                        // printf("Sending back: %s", line);
+
+                            //send data back to client
+                            send(new_socket, line, strlen(line), 0);
+                        } 
+
+                        fclose(fp1);
+                        free(line);
+                        memset(buffer, '\0', sizeof(buffer));
+                    }
             }
         }
    
@@ -181,7 +220,7 @@ void* threadsocket(void* thread_param)
         }
     }  
 
-
+    
     pthread_exit(NULL); 
     return thread_param;     
 }
@@ -259,6 +298,9 @@ int main(int argc, char *argv[])
 
     struct node* head = NULL;//
     int i = 0;
+
+   int char_driver_fd = open("/dev/aesdchar", O_RDWR);
+
 
     //sigaction struct
     struct sigaction sa;
@@ -428,6 +470,7 @@ int main(int argc, char *argv[])
                // (*args).store_file = store_file;
                 (*args).ip_address = ip_address;
                 (*args).t_index = i;
+                args->char_driver_fd=char_driver_fd;
 
                 
                 //Add item to head of linked list when there is a new connection
@@ -460,7 +503,7 @@ int main(int argc, char *argv[])
     }
 
     printf("Exiting application\n");
-    
+    close(char_driver_fd);
     //removes aesdsocketdata file
     if (USE_AESD_CHAR_DEVICE == 0)
         remove(store_file);

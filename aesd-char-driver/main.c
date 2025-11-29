@@ -258,14 +258,15 @@ int aesd_adjust_file_offset(struct file *filp, uint32_t write_cmd, uint32_t writ
 
     while (i< AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED)
     {
-
+        
+           
         entry_size_total += dev->cbuf.entry[i].size;
         if (i == write_cmd)
-            break; 
+                break; 
         i++;
     }
-
-    filp->f_pos = entry_size_total + write_cmd_offset;
+    size_t start_entry_buffer = (entry_size_total - dev->cbuf.entry[i].size);
+    filp->f_pos = start_entry_buffer + write_cmd_offset;
 
     mutex_unlock(&dev->lock);
 
@@ -281,7 +282,7 @@ long aesd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
     switch (cmd) {
     case AESDCHAR_IOCSEEKTO:
-    struct aesd_seekto seekto; 
+    struct aesd_seekto seekto;
         if (copy_from_user(&seekto, (const void __user *)arg, sizeof(seekto))!=0)
         {
             return -EFAULT;
@@ -289,7 +290,8 @@ long aesd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         else
         {
             ret = aesd_adjust_file_offset(filp, seekto.write_cmd, seekto.write_cmd_offset);
-            printk(KERN_INFO "Value from user: %d\n", seekto.write_cmd);
+            printk(KERN_INFO "write cmd from user: %d\n", seekto.write_cmd);
+            printk(KERN_INFO "write offset from user: %d\n", seekto.write_cmd_offset);
         }
        
         break;

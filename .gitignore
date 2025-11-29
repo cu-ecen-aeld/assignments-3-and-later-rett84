@@ -23,3 +23,4 @@ aesd-char-driver/modules.order
 aesd-char-driver/.main.o.cmd
 aesd-char-driver/aesdchar.mod
 aesd-char-driver/aesdchar.mod.c
+server/aesdsocket
