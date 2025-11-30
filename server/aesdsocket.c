@@ -472,7 +472,7 @@ int main(int argc, char *argv[])
                // (*args).store_file = store_file;
                 (*args).ip_address = ip_address;
                 (*args).t_index = i;
-                args->char_driver_fd=char_driver_fd;
+                
 
                 
                 //Add item to head of linked list when there is a new connection
